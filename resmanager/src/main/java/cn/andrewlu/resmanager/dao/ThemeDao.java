@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ public class ThemeDao {
         Cursor cursor = null;
         try {
             cursor = dbHelper.getReadableDatabase().query(TABLE_NAME, null, "name=?",
-                    new String[]{themeName}, null, null, "id ASC", "LIMIT 1");
+                    new String[]{themeName}, null, null, "verCode DESC", " 1");
             if (cursor != null && cursor.moveToFirst()) {
                 ThemeInfo info = dbHelper.parseCursor(cursor);
                 return info;
@@ -67,7 +68,7 @@ public class ThemeDao {
         Cursor cursor = null;
         try {
             cursor = dbHelper.getReadableDatabase().query(TABLE_NAME, null, "assetsPath=?",
-                    new String[]{assetName}, null, null, "id ASC", "LIMIT 1");
+                    new String[]{assetName}, null, null, "verCode DESC", " 1");
             if (cursor != null && cursor.moveToFirst()) {
                 ThemeInfo info = dbHelper.parseCursor(cursor);
                 return info;
@@ -81,22 +82,18 @@ public class ThemeDao {
     }
 
     public void setThemeSelected(String themeName) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
         try {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
             db.beginTransaction();
-
             String updateSql = "UPDATE " + TABLE_NAME + " SET selected = 0 WHERE selected = 1";
             db.execSQL(updateSql);
-
-            updateSql = "UPDATE " + TABLE_NAME + " SET selected = 1 WHERE name= ?";
+            updateSql = "UPDATE " + TABLE_NAME + " SET selected = 1 WHERE name= ? ";
             db.execSQL(updateSql, new String[]{themeName});
-
-            db.endTransaction();
             db.setTransactionSuccessful();
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
+            db.endTransaction();
         }
     }
 
@@ -104,7 +101,7 @@ public class ThemeDao {
         Cursor cursor = null;
         try {
             cursor = dbHelper.getReadableDatabase().query(TABLE_NAME, null, "selected=?",
-                    new String[]{"1"}, null, null, "id ASC", "LIMIT 1");
+                    new String[]{"1"}, null, null, "verCode DESC", " 1");
             if (cursor != null && cursor.moveToFirst()) {
                 ThemeInfo info = dbHelper.parseCursor(cursor);
                 return info;
@@ -142,7 +139,7 @@ public class ThemeDao {
         public void onCreate(SQLiteDatabase db) {
             StringBuffer buffer = new StringBuffer();
             buffer.append("CREATE TABLE IF NOT EXISTS ").append(TABLE_NAME)
-                    .append("(id integer PRIMARY KEY AUTO_INCREMENT,")
+                    .append("(id integer PRIMARY KEY AUTOINCREMENT,")
                     .append("name varchar(100) NOT NULL,")
                     .append("author varchar(100),")
                     .append("description varchar(512),")
@@ -162,6 +159,7 @@ public class ThemeDao {
                     .append("createAt integer,")
                     .append("selected int)");
             db.execSQL(buffer.toString());
+            Log.d("ThemeDao", "onCreate");
         }
 
         @Override

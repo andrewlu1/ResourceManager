@@ -57,7 +57,7 @@ public class ResManager {
     private final ExecutorService mWorkThread = Executors.newCachedThreadPool();
 
     //you should put you skin apk in assets/skins/ directory.
-    private final String mSkinAssetDir = "skins/";
+    private final String mSkinAssetDir = "skins";
     private ThemeDao themeDao;
 
     private final static String TAG = ResManager.class.getSimpleName();
@@ -81,46 +81,36 @@ public class ResManager {
         mSharedPreferences = mContext.getSharedPreferences("theme_info", Context.MODE_PRIVATE);
 
         themeDao = new ThemeDao(context);
-        //加载主工程皮肤资源。
         mWorkThread.execute(new Runnable() {
             @Override
             public void run() {
-                mMainIdMap.putAll(loadIdMap(mContext.getResources(), mSkinAssetDir + "data", true));
+                mMainIdMap.putAll(loadIdMap(mContext.getResources(), mSkinAssetDir + "/data", true));
             }
         });
 
-        //检查当前选中主题。
         ThemeInfo currentTheme = themeDao.getCurrentTheme();
         if (currentTheme != null) {
-            //异步加载当前皮肤。
             loadCurrentThemeAyn(currentTheme.name);
         }
-
-        //检查assets中默认皮肤是否拷贝完成。
         checkSkinFileLoadFinished();
     }
 
     /**
-     * 获取所有主题列表。
-     * 包括内置的，以及从外部拷贝过来的。
+     * get all theme infos that in in data/data.
      *
-     * @return
+     * @return all themeInfo list.
      */
     public final List<ThemeInfo> getAllThemes() {
         return themeDao.getAllThemeInfo();
     }
 
-    /**
-     * 从数据库查找theme 相应的信息并加载。
-     *
-     * @param themeName
-     */
     private void loadCurrentThemeAyn(final String themeName) {
         mWorkThread.execute(new Runnable() {
             @Override
             public void run() {
                 ThemeInfo themeInfo = themeDao.getThemeByName(themeName);
                 if (themeInfo != null) {
+                    themeDao.setThemeSelected(themeName);
                     loadSkin(themeInfo.fullPath, themeInfo.name);
                 }
             }
@@ -133,7 +123,6 @@ public class ResManager {
         public Map<Integer, Integer> idMap = new HashMap<>();
     }
 
-    //计算文件md5
     private String getMd5ByFile(File file) throws FileNotFoundException {
         String value = null;
         FileInputStream in = new FileInputStream(file);
@@ -157,9 +146,7 @@ public class ResManager {
         return value;
     }
 
-    //检查皮肤资源是否初始化完成。
     private void checkSkinFileLoadFinished() {
-        //处理assets中的资源，并将其拷贝到data中。
         boolean loadThemeFinished = mSharedPreferences.getBoolean("theme_load_finish", false);
         if (!loadThemeFinished) {
             mWorkThread.execute(new Runnable() {
@@ -226,11 +213,10 @@ public class ResManager {
     }
 
     /**
-     * 添加主题监听。
-     *
-     * @param observer
+     * @param observer themeChangeObserver object
      */
     public void addThemeObserver(IThemeChangeListener observer) {
+        if (observer == null) return;
         for (WeakReference<IThemeChangeListener> ob : themeObservers) {
             if (ob.get() == observer) {
                 Log.d(TAG, "addThemeObserver failed. same observer found:" + observer);
@@ -238,15 +224,16 @@ public class ResManager {
             }
         }
         themeObservers.add(new WeakReference<>(observer));
+        if (observer != null) {
+            observer.onThemeChanged(getResource());
+        }
     }
 
     /**
-     * 移除主题变更监听。
-     *
-     * @param observer
+     * @param observer themeChangeObserver object
      */
     public void removeThemeObserver(IThemeChangeListener observer) {
-
+        if (observer == null) return;
         for (WeakReference<IThemeChangeListener> ob : themeObservers) {
             if (ob.get() == observer) {
                 themeObservers.remove(ob);
@@ -275,14 +262,6 @@ public class ResManager {
         });
     }
 
-    /**
-     * load skin id map data.
-     *
-     * @param resources 当前主题resource对象.
-     * @param assetPath idmap data file in assets file path.
-     * @param reverse   whether it should reverse the key-value pair.
-     * @return resNameHashCode-IdValue.
-     */
     private Map<Integer, Integer> loadIdMap(Resources resources, String assetPath,
                                             boolean reverse) {
         DataInputStream dataInput = null;
@@ -322,12 +301,6 @@ public class ResManager {
         return Collections.emptyMap();
     }
 
-    /**
-     * load a resource object file an apk file.
-     *
-     * @param apkPath skin file path.
-     * @return resources object with the apk file.
-     */
     private Resources loadSkinResources(String apkPath) {
         try {
             if (!new File(apkPath).exists()) {
@@ -344,12 +317,6 @@ public class ResManager {
         return mContext.getResources();
     }
 
-    /**
-     * 获取apk 信息。
-     *
-     * @param apkPath
-     * @return
-     */
     private PackageInfo getPackageInfo(String apkPath) {
         PackageManager pm = mContext.getPackageManager();
         PackageInfo pInfo = pm.getPackageArchiveInfo(apkPath, PackageManager.GET_ACTIVITIES);
@@ -359,7 +326,7 @@ public class ResManager {
     /**
      * set theme that in assets file paths.
      *
-     * @param themeName 主题名称.
+     * @param themeName themeName.
      */
     public void setTheme(String themeName) {
         if (themeName == null) {
@@ -371,17 +338,17 @@ public class ResManager {
         }
         if (skinCache.get(themeName) != null) {
             mCurrentTheme = skinCache.get(themeName);
+            themeDao.setThemeSelected(themeName);
             onThemeChanged(getResource());
         } else {
             loadCurrentThemeAyn(themeName);
         }
-        themeDao.setThemeSelected(themeName);
     }
 
     /**
      * set Theme from external file such as download skined apks.
      *
-     * @param filePath 主题皮肤文件sd路径
+     * @param filePath external filepath
      */
     public void setThemeWithFile(final String filePath) {
         if (filePath == null) {
@@ -425,15 +392,9 @@ public class ResManager {
         }
     }
 
-    /**
-     * 从文件加载皮肤资源。
-     *
-     * @param skinFilePath
-     * @param themeName
-     */
     private void loadSkin(String skinFilePath, String themeName) {
         Resources resources = loadSkinResources(skinFilePath);
-        Map<Integer, Integer> idMap = loadIdMap(resources, mSkinAssetDir + "data", false);
+        Map<Integer, Integer> idMap = loadIdMap(resources, mSkinAssetDir + "/data", false);
         SkinRes res = new SkinRes();
         res.resFilePath = themeName;
         res.idMap.putAll(idMap);
@@ -442,10 +403,10 @@ public class ResManager {
         if (resources instanceof SkinResources) {
             ((SkinResources) resources).setFilter(new MyIdMapFilter(mMainIdMap, res.idMap));
         }
+        skinCache.put(themeName, mCurrentTheme);
         onThemeChanged(getResource());
     }
 
-    //从assets中拷贝到data目录
     private String copyResFromAssets(String resName) {
         File skinDir = new File(mContext.getFilesDir(), mSkinAssetDir);
         if (!skinDir.exists()) skinDir.mkdirs();
@@ -456,7 +417,7 @@ public class ResManager {
         InputStream inputStream = null;
         FileOutputStream fileOutputStream = null;
         try {
-            inputStream = mContext.getResources().getAssets().open(mSkinAssetDir + resName);
+            inputStream = mContext.getResources().getAssets().open(mSkinAssetDir + File.separator + resName);
             fileOutputStream = new FileOutputStream(targetFile);
             byte[] buff = new byte[1024];
             int readCount = -1;
@@ -481,12 +442,6 @@ public class ResManager {
         return null;
     }
 
-    /**
-     * 从外部文件拷贝皮肤到data目录。
-     *
-     * @param srcFilePath
-     * @return
-     */
     private String copySkinFromFile(String srcFilePath) {
         File srcFile = new File(srcFilePath);
         if (!srcFile.exists()) return null;
@@ -524,12 +479,11 @@ public class ResManager {
         return null;
     }
 
-    //从data 文件中加载主题配置。
     private ThemeInfo getThemeInfoInner(Resources resources) {
         DataInputStream dataInput = null;
         ThemeInfo info = new ThemeInfo();
         try {
-            dataInput = new DataInputStream(new BufferedInputStream(resources.getAssets().open(mSkinAssetDir + "data")));
+            dataInput = new DataInputStream(new BufferedInputStream(resources.getAssets().open(mSkinAssetDir + "/data")));
             String magic = dataInput.readUTF();
             if (!"SKIN".equals(magic)) return null;
             String skinConfig = dataInput.readUTF();
@@ -577,7 +531,6 @@ public class ResManager {
         return info;
     }
 
-    //从data 中加载主题配置。
     private ThemeInfo getThemeInfoFromFile(String filePath) {
         try {
             Resources resources = loadSkinResources(filePath);
@@ -590,7 +543,6 @@ public class ResManager {
                     info.name = packageInfo.applicationInfo.name;
                 }
                 info.fullPath = filePath;
-//                info.assetsPath = skinFile;//带了.apk后缀
                 info.size = new File(filePath).length();
                 info.md5 = getMd5ByFile(new File(filePath));
 
