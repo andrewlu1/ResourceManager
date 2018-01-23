@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="skin" format="enum">
+        <enum name="enable" value="1" />
+        <enum name="disable" value="0" />
+    </attr>
+</resources>

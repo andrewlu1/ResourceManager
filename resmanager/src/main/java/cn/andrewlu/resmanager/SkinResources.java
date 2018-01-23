@@ -50,7 +50,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getBoolean(_id);
+        return superResources.getBoolean(resId);
     }
 
     public int getColor(int resId) {
@@ -62,7 +62,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getColor(_id);
+        return superResources.getColor(resId);
     }
 
     public ColorStateList getColorStateList(int resId) {
@@ -74,7 +74,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getColorStateList(_id);
+        return superResources.getColorStateList(resId);
     }
 
     public float getDimension(int resId) {
@@ -86,7 +86,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getDimension(_id);
+        return superResources.getDimension(resId);
     }
 
     public int getDimensionPixelOffset(int resId) {
@@ -98,7 +98,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getDimensionPixelOffset(_id);
+        return superResources.getDimensionPixelOffset(resId);
     }
 
     public int getDimensionPixelSize(int resId) {
@@ -110,7 +110,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getDimensionPixelSize(_id);
+        return superResources.getDimensionPixelSize(resId);
     }
 
     public Drawable getDrawable(int resId) {
@@ -122,7 +122,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getDrawable(_id);
+        return superResources.getDrawable(resId);
     }
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
@@ -135,7 +135,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getDrawableForDensity(_id, density);
+        return superResources.getDrawableForDensity(resId, density);
     }
 
     @TargetApi(Build.VERSION_CODES.O)
@@ -148,7 +148,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getFont(_id);
+        return superResources.getFont(resId);
     }
 
     public float getFraction(int resId, int base, int pbase) {
@@ -160,7 +160,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getFraction(_id, base, pbase);
+        return superResources.getFraction(resId, base, pbase);
     }
 
     public int getInteger(int resId) {
@@ -172,7 +172,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getInteger(_id);
+        return superResources.getInteger(resId);
     }
 
     public Movie getMovie(int resId) {
@@ -184,7 +184,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getMovie(_id);
+        return superResources.getMovie(resId);
     }
 
     public String getQuantityString(int resId, int quantity) {
@@ -196,7 +196,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getQuantityString(_id, quantity);
+        return superResources.getQuantityString(resId, quantity);
     }
 
     public String getQuantityString(int resId, int quentity, Object... args) {
@@ -208,7 +208,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getQuantityString(_id, quentity, args);
+        return superResources.getQuantityString(resId, quentity, args);
     }
 
     public String getString(int resId) {
@@ -218,7 +218,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getString(_id);
+        return superResources.getString(resId);
     }
 
     public String getString(int resId, Object... args) {
@@ -230,7 +230,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getString(_id, args);
+        return superResources.getString(resId, args);
     }
 
     public String[] getStringArray(int resId) {
@@ -242,7 +242,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getStringArray(_id);
+        return superResources.getStringArray(resId);
     }
 
     public CharSequence getText(int resId) {
@@ -254,7 +254,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getText(_id);
+        return superResources.getText(resId);
     }
 
     public CharSequence[] getTextArray(int resId) {
@@ -266,7 +266,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getTextArray(_id);
+        return superResources.getTextArray(resId);
     }
 
     public CharSequence getText(int resId, CharSequence def) {
@@ -278,7 +278,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return superResources.getText(_id, def);
+        return superResources.getText(resId, def);
     }
 
     public void getValue(int resId, TypedValue outValue, boolean resoveRefs) {
@@ -290,7 +290,7 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        superResources.getValue(_id, outValue, resoveRefs);
+        superResources.getValue(resId, outValue, resoveRefs);
     }
 
     public void getValue(String name, TypedValue outValue, boolean resoveRefs) {
@@ -312,6 +312,6 @@ public class SkinResources extends Resources {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        superResources.getValueForDensity(_id, density, outValue, resoveRefs);
+        superResources.getValueForDensity(resId, density, outValue, resoveRefs);
     }
 }
