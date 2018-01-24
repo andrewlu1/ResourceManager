@@ -93,16 +93,17 @@ public class SkinLayoutInflaterFactory implements LayoutInflater.Factory2 {
                 attrKV.put(name, value);
             }
         }
-        if (!"enable".equals(attrKV.get(SKIN_ATTR))) {
-            return;
+        if ("enable".equals(attrKV.get(SKIN_ATTR))
+                || "1".equals(attrKV.get(SKIN_ATTR))) {
+            appendSkinnableActions(view, attrKV);
         }
-        appendSkinnableActions(view, attrKV);
     }
 
     private void appendSkinnableActions(View view, Map<String, String> attrs) {
         Set<String> attrNames = attrs.keySet();
         for (String attrName : attrNames) {
-            Skin.R.addSkinnableIfNeed(view, attrName, attrs.get(attrName).substring(1));
+            Skin.R.attachAttrToSkin(view, attrName, attrs.get(attrName).substring(1));
         }
+        Skin.R.endAttachment(view);
     }
 }

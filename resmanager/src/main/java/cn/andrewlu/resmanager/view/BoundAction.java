@@ -31,19 +31,19 @@ public class BoundAction extends SkinnableAction<View> {
         }
         switch (bound) {
             case TOP: {
-                view.setTop(ResManager.getResource().getDimensionPixelSize(resId));
+                view.setTop((int) ResManager.getResource().getDimension(resId));
                 break;
             }
             case LEFT: {
-                view.setLeft(ResManager.getResource().getDimensionPixelSize(resId));
+                view.setLeft((int) ResManager.getResource().getDimension(resId));
                 break;
             }
             case RIGHT: {
-                view.setRight(ResManager.getResource().getDimensionPixelSize(resId));
+                view.setRight((int) ResManager.getResource().getDimension(resId));
                 break;
             }
             case BOTTOM: {
-                view.setBottom(ResManager.getResource().getDimensionPixelSize(resId));
+                view.setBottom((int) ResManager.getResource().getDimension(resId));
                 break;
             }
         }

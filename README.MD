@@ -1,19 +1,39 @@
 # Release Note
 此方案实现了 分离式皮肤APK 的资源管理。用于多主题方案的资源查询。方案的详细原理参看ATA文档：
 https://www.atatech.org/articles/98848
+# V1.0.3 (2018.1.24)
 
-#V1.0.2 (2018.1.23)
+### 新增接口：
+1. Skin.setCompoundDrawable((T view,@DrawableRes int resIdLeft,
+@DrawableRes int resIdTop,@DrawableRes int resIdRight,
+@DrawableRes int resIdBottom);  [tip:set 0 means no drawable in some side.]
+2. Skin.setDrawablePadding(T view, @DimenRes int resId);
+
+### 新增 Xml 属性支持：
+1. drawableLeft | drawableRight | drawableTop | drawableBottom
+2. drawablePadding
+<br>[tips: now you can use these properties for skinnable config.]
+
+### 新增SkinActivity | AppCompatSkinActivity 
+简单继承其中一种Activity 即可快速完成换肤配置。_AppCompatSkinActivity 用于带support-v7包的工程。_
+<p> Skin.setXmlLayoutSkinnable()接口仍然可用，如果你不想继承以上Activity基类的话。
+
+### BugFix:
+1. 修复若干可能的崩溃异常。
+2. 优化Action的执行过程。
+
+
+# V1.0.2 (2018.1.23)
+
 * 新增Xml 布局的皮肤化支持。
 * 新增自动皮肤化监听，不需要手动监听themeChange事件。
 * 修复SkinResources类的一个传参异常。
 
-_使用示例：_
+##### 示例：
 > 在Xml布局中使用：
-
 1. 添加 skin="enable|disable" 属性在你希望得到皮肤支持的控件上， 或者自定义控件 implements Skinnable 接口。
 2. 对于希望使用皮肤资源的属性应用 @资源引用，而非具体的值。如：android:text="@string/xxx"
 
-##### 示例：
 ```xml
     <TextView
         android:id="@+id/previewText"
@@ -166,12 +186,12 @@ skinConfig {
 
 
 
-#V1.0.1 (2018.1.19)
+# V1.0.1 (2018.1.19)
  * 新增皮肤信息解析逻辑
  * 新增皮肤列表管理能力
  * 重构皮肤初始化逻辑，在程序首次运行时即拷贝assets下所有皮肤到特定目录。
  
 
-#V1.0.0
+# V1.0.0
 * 能够解析皮肤包资源内容。
 * 能够通知主题变更

@@ -9,6 +9,7 @@ import android.support.annotation.DrawableRes;
 import android.support.annotation.FontRes;
 import android.support.annotation.StringRes;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -24,6 +25,8 @@ import cn.andrewlu.resmanager.view.BackgroundColorAction;
 import cn.andrewlu.resmanager.view.BackgroundDrawableAction;
 import cn.andrewlu.resmanager.view.BoundAction;
 import cn.andrewlu.resmanager.view.ButtonDrawableAction;
+import cn.andrewlu.resmanager.view.CompoundDrawableAction;
+import cn.andrewlu.resmanager.view.DrawablePaddingAction;
 import cn.andrewlu.resmanager.view.ImageSrcAction;
 import cn.andrewlu.resmanager.view.PaddingAction;
 import cn.andrewlu.resmanager.view.SkinLayoutInflaterFactory;
@@ -74,29 +77,46 @@ public class Skin implements IThemeChangeListener {
         return actionFactory.get(attrName);
     }
 
-    public void addSkinnableIfNeed(View view, String attrName, String resIdValue) {
+    public void attachAttrToSkin(View view, String attrName, String resIdValue) {
         try {
             Factory factory = getFactory(attrName);
             if (factory != null) {
                 Log.d("SKIN", "add skinnable:" + attrName);
                 SkinnableAction action = factory.create(view, Integer.valueOf(resIdValue), attrName);
-                addAction(view, action);
+                addActionNotGoing(view, action);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void addSkinnableIfNeed(View view, String attrName, int resId) {
+    public void attachAttrToSkin(View view, String attrName, int resId) {
         try {
             Factory factory = getFactory(attrName);
             if (factory != null) {
                 SkinnableAction action = factory.create(view, resId, attrName);
-                addAction(view, action);
+                addActionNotGoing(view, action);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void endAttachment(View view) {
+        Set<SkinnableAction> actions = findActionsOf(view);
+        if (actions == null) return;
+        try {
+            for (SkinnableAction action : actions) {
+                action.go();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addActionNotGoing(View view, SkinnableAction action) {
+        Set<SkinnableAction> actions = findActionsOf(view);
+        actions.add(action);
     }
 
     @Override
@@ -112,6 +132,25 @@ public class Skin implements IThemeChangeListener {
             }
             for (SkinnableAction action : viewOfActions) {
                 if (!action.go()) {
+                    viewOfActions.remove(action);
+                    continue;
+                }
+            }
+        }
+    }
+
+    public final void checkLowMemory() {
+        Set<Integer> viewHashes = actions.keySet();
+        if (viewHashes == null) return;
+        for (Integer hash : viewHashes) {
+            Set<SkinnableAction> viewOfActions = actions.get(hash);
+            //if there are no actions for this view, remove the hash key.
+            if (viewOfActions == null || viewOfActions.size() <= 0) {
+                actions.remove(hash);
+                continue;
+            }
+            for (SkinnableAction action : viewOfActions) {
+                if (null == action.get()) {
                     viewOfActions.remove(action);
                     continue;
                 }
@@ -178,6 +217,30 @@ public class Skin implements IThemeChangeListener {
         return R;
     }
 
+    /**
+     * use to replace TextView.setCompoundDrawable() API.
+     * Attention: please put your drawable into drawable-nodpi directory to avoid the drawable scale unexcep.
+     *
+     * @param view        the textView to set with.
+     * @param resIdLeft   drawableLeft Id. 0 will ignore.
+     * @param resIdTop    drawableTop Id. 0 will ignore.
+     * @param resIdRight  drawableRight Id. 0 will ignore.
+     * @param resIdBottom drawableBottom Id. 0 will ignore.
+     */
+    public <T extends TextView> Skin setCompoundDrawable(T view,
+                                                         @DrawableRes int resIdLeft,
+                                                         @DrawableRes int resIdTop,
+                                                         @DrawableRes int resIdRight,
+                                                         @DrawableRes int resIdBottom) {
+        addAction(view, new CompoundDrawableAction(view, resIdLeft, resIdTop, resIdRight, resIdBottom));
+        return R;
+    }
+
+    public <T extends TextView> Skin setDrawablePadding(T view, @DimenRes int resId) {
+        addAction(view, new DrawablePaddingAction(view, resId));
+        return R;
+    }
+
     //===============================ImageView============================//
     public <T extends ImageView> Skin setImageDrawable(T view, @DrawableRes int resId) {
         addAction(view, new ImageSrcAction(view, resId));
@@ -191,16 +254,31 @@ public class Skin implements IThemeChangeListener {
         return R;
     }
 
+    public <T extends SkinnableAction> T getAction(View view, Class<T> actionClass) {
+        Set<SkinnableAction> actions = findActionsOf(view);
+        if (actions == null) return null;
+        for (SkinnableAction action : actions) {
+            if (actionClass == action.getClass()) {
+                return (T) action;
+            }
+        }
+        return null;
+    }
+
     /**
      * must call it before setContentView API.
      *
      * @param activity the activity that need skinnable.
      */
-    public static void setXmlLayoutSkinnable(Activity activity) {
+    public void setXmlLayoutSkinnable(Activity activity) {
         activity.getLayoutInflater().setFactory2(new SkinLayoutInflaterFactory(activity));
     }
 
     public static Type checkResType(Context context, int resId) {
+        if (resId == 0) {
+            Log.e("Skin", "Error! onAction. resId == 0");
+            return Type.UNKNOWN;
+        }
         String type = context.getResources().getResourceTypeName(resId);
         return Type.valueFrom(type);
     }
@@ -230,56 +308,80 @@ public class Skin implements IThemeChangeListener {
 
     //=======================================================================//
     public interface Factory<T extends View> {
-        SkinnableAction create(T view, int resId, String actionName, Object... args);
+        SkinnableAction create(T view, int resId, String actionName);
     }
 
     {
         appendFactory("background", new Factory<View>() {
             @Override
-            public SkinnableAction create(View view, int resId, String actionName, Object... args) {
+            public SkinnableAction create(View view, int resId, String actionName) {
                 return new BackgroundAction(view, resId);
             }
         });
         appendFactory("padding", new Factory<View>() {
             @Override
-            public SkinnableAction create(View view, int resId, String actionName, Object... args) {
-                return new PaddingAction(view, (int) args[0], (int) args[1], (int) args[2], (int) args[3]);
+            public SkinnableAction create(View view, int resId, String actionName) {
+                return new PaddingAction(view, resId, resId, resId, resId);
             }
         });
         appendFactory("paddingLeft", new Factory<View>() {
             @Override
-            public SkinnableAction create(View view, int resId, String actionName, Object... args) {
-                return new PaddingAction(view, (int) args[0], 0, 0, 0);
+            public SkinnableAction create(View view, int resId, String actionName) {
+                PaddingAction action = getAction(view, PaddingAction.class);
+                if (action == null) {
+                    action = new PaddingAction(view, resId, 0, 0, 0);
+                } else {
+                    action.update(Gravity.LEFT, resId);
+                }
+                return action;
             }
         });
         appendFactory("paddingTop", new Factory<View>() {
             @Override
-            public SkinnableAction create(View view, int resId, String actionName, Object... args) {
-                return new PaddingAction(view, 0, (int) args[1], 0, 0);
+            public SkinnableAction create(View view, int resId, String actionName) {
+                PaddingAction action = getAction(view, PaddingAction.class);
+                if (action == null) {
+                    action = new PaddingAction(view, 0, resId, 0, 0);
+                } else {
+                    action.update(Gravity.TOP, resId);
+                }
+                return action;
             }
         });
         appendFactory("paddingRight", new Factory<View>() {
             @Override
-            public SkinnableAction create(View view, int resId, String actionName, Object... args) {
-                return new PaddingAction(view, 0, 0, (int) args[2], 0);
+            public SkinnableAction create(View view, int resId, String actionName) {
+                PaddingAction action = getAction(view, PaddingAction.class);
+                if (action == null) {
+                    action = new PaddingAction(view, 0, 0, resId, 0);
+                } else {
+                    action.update(Gravity.RIGHT, resId);
+                }
+                return action;
             }
         });
         appendFactory("paddingBottom", new Factory<View>() {
             @Override
-            public SkinnableAction create(View view, int resId, String actionName, Object... args) {
-                return new PaddingAction(view, 0, 0, 0, (int) args[3]);
+            public SkinnableAction create(View view, int resId, String actionName) {
+                PaddingAction action = getAction(view, PaddingAction.class);
+                if (action == null) {
+                    action = new PaddingAction(view, 0, 0, 0, resId);
+                } else {
+                    action.update(Gravity.BOTTOM, resId);
+                }
+                return action;
             }
         });
         appendFactory("text", new Factory<TextView>() {
             @Override
-            public SkinnableAction create(TextView view, int resId, String actionName, Object... args) {
+            public SkinnableAction create(TextView view, int resId, String actionName) {
                 return new TextAction(view, resId);
             }
         });
 
         appendFactory("textSize", new Factory<TextView>() {
             @Override
-            public SkinnableAction create(TextView view, int resId, String actionName, Object... args) {
+            public SkinnableAction create(TextView view, int resId, String actionName) {
                 return new TextSizeAction(view, resId);
             }
         });
@@ -287,21 +389,84 @@ public class Skin implements IThemeChangeListener {
         //how can i know if the color is color state List or a general color.
         appendFactory("textColor", new Factory<TextView>() {
             @Override
-            public SkinnableAction create(TextView view, int resId, String actionName, Object... args) {
+            public SkinnableAction create(TextView view, int resId, String actionName) {
                 return new TextColorAction(view, resId);
             }
         });
 
         appendFactory("src", new Factory<ImageView>() {
             @Override
-            public SkinnableAction create(ImageView view, int resId, String actionName, Object... args) {
+            public SkinnableAction create(ImageView view, int resId, String actionName) {
                 return new ImageSrcAction(view, resId);
             }
         });
         appendFactory("button", new Factory<CompoundButton>() {
             @Override
-            public SkinnableAction create(CompoundButton view, int resId, String actionName, Object... args) {
+            public SkinnableAction create(CompoundButton view, int resId, String actionName) {
                 return new ButtonDrawableAction(view, resId);
+            }
+        });
+
+        appendFactory("drawableLeft", new Factory<TextView>() {
+            @Override
+            public SkinnableAction create(TextView view, int resId, String actionName) {
+                //here the drawableLeft,drawableTop,drawableRight,drawableBottom is all in one action.
+                //so we need update the prev compoundDrawableAction than create a new one.
+                CompoundDrawableAction compoundAction = getAction(view, CompoundDrawableAction.class);
+                if (compoundAction == null) {
+                    compoundAction = new CompoundDrawableAction(view, resId, 0, 0, 0);
+                } else {
+                    compoundAction.update(Gravity.LEFT, resId);
+                }
+                return compoundAction;
+            }
+        });
+        appendFactory("drawableTop", new Factory<TextView>() {
+            @Override
+            public SkinnableAction create(TextView view, int resId, String actionName) {
+                //here the drawableLeft,drawableTop,drawableRight,drawableBottom is all in one action.
+                //so we need update the prev compoundDrawableAction than create a new one.
+                CompoundDrawableAction compoundAction = getAction(view, CompoundDrawableAction.class);
+                if (compoundAction == null) {
+                    compoundAction = new CompoundDrawableAction(view, 0, resId, 0, 0);
+                } else {
+                    compoundAction.update(Gravity.TOP, resId);
+                }
+                return compoundAction;
+            }
+        });
+        appendFactory("drawableRight", new Factory<TextView>() {
+            @Override
+            public SkinnableAction create(TextView view, int resId, String actionName) {
+                //here the drawableLeft,drawableTop,drawableRight,drawableBottom is all in one action.
+                //so we need update the prev compoundDrawableAction than create a new one.
+                CompoundDrawableAction compoundAction = getAction(view, CompoundDrawableAction.class);
+                if (compoundAction == null) {
+                    compoundAction = new CompoundDrawableAction(view, 0, 0, resId, 0);
+                } else {
+                    compoundAction.update(Gravity.RIGHT, resId);
+                }
+                return compoundAction;
+            }
+        });
+        appendFactory("drawableBottom", new Factory<TextView>() {
+            @Override
+            public SkinnableAction create(TextView view, int resId, String actionName) {
+                //here the drawableLeft,drawableTop,drawableRight,drawableBottom is all in one action.
+                //so we need update the prev compoundDrawableAction than create a new one.
+                CompoundDrawableAction compoundAction = getAction(view, CompoundDrawableAction.class);
+                if (compoundAction == null) {
+                    compoundAction = new CompoundDrawableAction(view, 0, 0, 0, resId);
+                } else {
+                    compoundAction.update(Gravity.BOTTOM, resId);
+                }
+                return compoundAction;
+            }
+        });
+        appendFactory("drawablePadding", new Factory<TextView>() {
+            @Override
+            public SkinnableAction create(TextView view, int resId, String actionName) {
+                return new DrawablePaddingAction(view, resId);
             }
         });
     }

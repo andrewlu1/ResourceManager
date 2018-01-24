@@ -17,7 +17,6 @@ public class TypefaceAction extends SkinnableAction<TextView> {
 
     @Override
     public void onAction(TextView view) {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             view.setTypeface(ResManager.getResource().getFont(resId));
         }

@@ -54,3 +54,9 @@ freeline.py
 freeline/
 freeline_project_description.json
 /gradle.properties
+/resmanager/.idea
+/resmanager/gradle
+/resmanager/gradlew.bat
+/resmanager/resmanager.iml
+/resmanager/gradlew
+/local.properties

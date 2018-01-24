@@ -29,11 +29,23 @@ public abstract class SkinnableAction<T extends View> {
 
     public abstract void onAction(T view);
 
+    protected void onUpdateAction(Object... args) {
+    }
+
+    public final void update(Object... args) {
+        onUpdateAction(args);
+    }
+
     public final boolean go() {
         T v = get();
         if (Looper.myLooper() == Looper.getMainLooper()) {
             if (v != null) {
-                onAction(v);
+                try {
+                    onAction(v);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         } else {
             sHandler.post(new Runnable() {
@@ -41,7 +53,11 @@ public abstract class SkinnableAction<T extends View> {
                 public void run() {
                     T v = get();
                     if (v != null) {
-                        onAction(v);
+                        try {
+                            onAction(v);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             });
