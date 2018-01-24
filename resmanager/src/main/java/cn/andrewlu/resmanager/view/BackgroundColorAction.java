@@ -17,6 +17,7 @@ public class BackgroundColorAction extends SkinnableAction<View> {
 
     @Override
     public void onAction(View view) {
+
         Skin.Type type = Skin.checkResType(view.getContext(), resId);
         if (type == Skin.Type.Color) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

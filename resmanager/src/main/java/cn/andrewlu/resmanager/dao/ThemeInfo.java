@@ -38,4 +38,6 @@ public class ThemeInfo {
     public String md5;
 
     public boolean selected;
+
+    public String packageName;
 }

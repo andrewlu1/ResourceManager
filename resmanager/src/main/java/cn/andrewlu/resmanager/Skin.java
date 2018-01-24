@@ -81,7 +81,6 @@ public class Skin implements IThemeChangeListener {
         try {
             Factory factory = getFactory(attrName);
             if (factory != null) {
-                Log.d("SKIN", "add skinnable:" + attrName);
                 SkinnableAction action = factory.create(view, Integer.valueOf(resIdValue), attrName);
                 addActionNotGoing(view, action);
             }
@@ -123,17 +122,18 @@ public class Skin implements IThemeChangeListener {
     public void onThemeChanged(Resources currentTheme) {
         Set<Integer> viewHashes = actions.keySet();
         if (viewHashes == null) return;
-        for (Integer hash : viewHashes) {
+        Integer[] keys = viewHashes.toArray(new Integer[viewHashes.size()]);
+        for (Integer hash : keys) {
             Set<SkinnableAction> viewOfActions = actions.get(hash);
             //if there are no actions for this view, remove the hash key.
-            if (viewOfActions == null || viewOfActions.size() <= 0) {
-                actions.remove(hash);
+            if (viewOfActions == null) {
                 continue;
             }
+//            SkinnableAction[] viewActions = viewOfActions.toArray(new SkinnableAction[viewOfActions.size()]);
             for (SkinnableAction action : viewOfActions) {
                 if (!action.go()) {
-                    viewOfActions.remove(action);
-                    continue;
+                    actions.remove(hash);
+                    break;
                 }
             }
         }
@@ -233,11 +233,6 @@ public class Skin implements IThemeChangeListener {
                                                          @DrawableRes int resIdRight,
                                                          @DrawableRes int resIdBottom) {
         addAction(view, new CompoundDrawableAction(view, resIdLeft, resIdTop, resIdRight, resIdBottom));
-        return R;
-    }
-
-    public <T extends TextView> Skin setDrawablePadding(T view, @DimenRes int resId) {
-        addAction(view, new DrawablePaddingAction(view, resId));
         return R;
     }
 

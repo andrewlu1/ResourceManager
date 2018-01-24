@@ -157,6 +157,7 @@ public class ThemeDao {
                     .append("md5 varchar(50),")
                     .append("size integer,")
                     .append("createAt integer,")
+                    .append("packageName varchar(100),")
                     .append("selected int)");
             db.execSQL(buffer.toString());
             Log.d("ThemeDao", "onCreate");
@@ -189,6 +190,7 @@ public class ThemeDao {
             info.size = cursor.getLong(cursor.getColumnIndex("size"));
             info.createAt = cursor.getLong(cursor.getColumnIndex("createAt"));
             info.selected = cursor.getInt(cursor.getColumnIndex("selected")) == 1;
+            info.packageName = cursor.getString(cursor.getColumnIndex("packageName"));
 
             String tags = cursor.getString(cursor.getColumnIndex("tags"));
             String drawables = cursor.getString(cursor.getColumnIndex("previewDrawables"));
@@ -217,6 +219,7 @@ public class ThemeDao {
             values.put("size", themeInfo.size);
             values.put("createAt", themeInfo.createAt);
             values.put("selected", themeInfo.selected ? 1 : 0);
+            values.put("packageName", themeInfo.packageName);
             return values;
         }
 

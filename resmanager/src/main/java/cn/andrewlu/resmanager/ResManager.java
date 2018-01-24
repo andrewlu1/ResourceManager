@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -104,6 +105,28 @@ public class ResManager {
         return themeDao.getAllThemeInfo();
     }
 
+    public final Drawable[] getThemePreviewDrawables(ThemeInfo themeInfo) {
+        if (themeInfo.previewDrawables == null || themeInfo.previewDrawables.length == 0)
+            return new Drawable[0];
+        if (themeInfo.packageName == null || themeInfo.packageName.length() == 0) {
+            PackageInfo packageInfo = getPackageInfo(themeInfo.fullPath);
+            if (packageInfo == null) return new Drawable[0];
+            themeInfo.packageName = packageInfo.packageName;
+            themeDao.saveTheme(themeInfo);
+        }
+        Resources resources = loadSkinResources(themeInfo.fullPath);
+        Drawable[] drawables = new Drawable[themeInfo.previewDrawables.length];
+        for (int i = 0; i < drawables.length; i++) {
+            if (themeInfo.previewDrawables[i] == null) continue;
+            int identifier = resources.getIdentifier(themeInfo.previewDrawables[i], "drawable", themeInfo.packageName);
+            if (identifier > 0) {
+                drawables[i] = resources.getDrawable(identifier);
+            }
+        }
+
+        return drawables;
+    }
+
     private void loadCurrentThemeAyn(final String themeName) {
         mWorkThread.execute(new Runnable() {
             @Override
@@ -170,6 +193,7 @@ public class ResManager {
                                 PackageInfo packageInfo = getPackageInfo(target);
                                 info = getThemeInfoInner(resources);
                                 if (info != null) {
+                                    info.packageName = packageInfo.packageName;
                                     info.verName = packageInfo.versionName;
                                     info.verCode = packageInfo.versionCode;
                                     if (info.name == null && packageInfo.applicationInfo != null) {
@@ -248,16 +272,20 @@ public class ResManager {
             @Override
             public void run() {
                 Log.d(TAG, "onThemeChanged");
-                deadThemeObservers.clear();
-                for (WeakReference<IThemeChangeListener> ob : themeObservers) {
-                    IThemeChangeListener observer = ob.get();
-                    if (observer != null) {
-                        observer.onThemeChanged(res);
-                    } else {
-                        deadThemeObservers.add(ob);
+                try {
+                    deadThemeObservers.clear();
+                    for (WeakReference<IThemeChangeListener> ob : themeObservers) {
+                        IThemeChangeListener observer = ob.get();
+                        if (observer != null) {
+                            observer.onThemeChanged(res);
+                        } else {
+                            deadThemeObservers.add(ob);
+                        }
                     }
+                    themeObservers.removeAll(deadThemeObservers);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                themeObservers.removeAll(deadThemeObservers);
             }
         });
     }
@@ -537,6 +565,7 @@ public class ResManager {
             PackageInfo packageInfo = getPackageInfo(filePath);
             ThemeInfo info = getThemeInfoInner(resources);
             if (info != null) {
+                info.packageName = packageInfo.packageName;
                 info.verName = packageInfo.versionName;
                 info.verCode = packageInfo.versionCode;
                 if (info.name == null && packageInfo.applicationInfo != null) {

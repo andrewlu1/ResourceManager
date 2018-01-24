@@ -4,6 +4,7 @@ import android.content.res.ColorStateList;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
+import android.util.Log;
 import android.view.View;
 
 import cn.andrewlu.resmanager.ResManager;
